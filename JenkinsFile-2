@@ -5,7 +5,7 @@ pipeline{
 
         stage('input'){
 
-            step{
+            stage{
                 input(message:'Hello world',ok:'Submit')
                 bat 'ls'
 
