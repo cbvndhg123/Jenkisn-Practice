@@ -1,0 +1,13 @@
+pipline{
+
+    agent any
+
+    stages{
+
+        stage{
+            script{
+                echo"Shri Ganesh"
+            }
+        }
+    }
+}
