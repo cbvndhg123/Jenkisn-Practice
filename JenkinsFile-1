@@ -7,10 +7,8 @@ pipeline {
   stages {
     stage('Hello') {
       steps {
-
         bat 'echo "Shri Ganesh"'
         echo "Build number is ${currentBuild.number}"
-        
       }
     }
   }

@@ -1,0 +1,16 @@
+pipline{
+    agent any
+
+    stages{
+
+        stage('input'){
+
+            step{
+                input(message:'Hello world',ok:'Submit')
+                bat 'ls'
+                
+            }
+        }
+    }
+    
+}
