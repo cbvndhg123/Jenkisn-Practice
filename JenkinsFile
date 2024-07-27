@@ -1,13 +1,11 @@
-pipline{
-
-    agent any
-
-    stages{
-
-        stage{
-            script{
-                echo"Shri Ganesh"
-            }
-        }
+pipeline {
+  agent any
+  stages {
+    stage('Hello') {
+      steps {
+        sh 'echo Hello World'
+        echo "Build number is ${currentBuild.number}"
+      }
     }
+  }
 }
