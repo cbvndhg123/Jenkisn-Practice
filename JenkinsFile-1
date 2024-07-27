@@ -8,8 +8,9 @@ pipeline {
     stage('Hello') {
       steps {
 
+        sh 'echo "Shri Ganesh"'
         echo "Build number is ${currentBuild.number}"
-        echo "Author change  display ${currentBuild.CHANGE_AUTHOR_DISPLAY_NAME}"
+        
       }
     }
   }
