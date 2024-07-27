@@ -6,8 +6,8 @@ pipeline{
         stage('input'){
 
             steps{
-                input(message:'Hello world',ok:'Submit')
-                bat 'ls'
+                bat 'dir'
+             
 
             }
         }
