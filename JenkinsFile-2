@@ -1,4 +1,4 @@
-pipline{
+pipeline{
     agent any
 
     stages{
@@ -8,7 +8,7 @@ pipline{
             step{
                 input(message:'Hello world',ok:'Submit')
                 bat 'ls'
-                
+
             }
         }
     }
