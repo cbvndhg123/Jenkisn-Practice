@@ -1,10 +1,15 @@
 pipeline {
   agent any
+  parameters {
+        string(name: 'TAG_NAME', defaultValue: 'vbsc', description: 'Optional tag name for robot tests')
+        string(name: 'FOLDER_NAME', defaultValue: 'CICD_VBSC', description: 'Optional folder for robot tests')
+  }
   stages {
     stage('Hello') {
       steps {
-          
+
         echo "Build number is ${currentBuild.number}"
+        echo "Author change  display ${currentBuild.CHANGE_AUTHOR_DISPLAY_NAME}"
       }
     }
   }
