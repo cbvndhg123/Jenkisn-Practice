@@ -1,4 +1,5 @@
-pipeline{
+pipeline
+{
 
   agent any
   parameters{
@@ -7,7 +8,8 @@ pipeline{
     string(name:'SECTION_IP',defaultValue:'CICD AUTOMATION', description:' Option for the project')
 
   }
-  stages{
+  stages
+  {
     stage('STEP 1'){
       steps{
         bat ' echo "Step 1 execution"'
@@ -22,28 +24,32 @@ pipeline{
       }
     }
   }
-  post{
-    always{
+
+  post
+  {
+    always
+    {
       bat 'echo "Post actions"'
-      post {
-    success {
-        emailext(
-            subject: "Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: "The build has completed successfully.\n\nJob: ${env.JOB_NAME}\nBuild Number: ${env.BUILD_NUMBER}\nMessage: Your custom message here.",
-            recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-            to: 'recipient@example.com'
-        )
-    }
-    failure {
-        emailext(
-            subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: "The build has failed.\n\nJob: ${env.JOB_NAME}\nBuild Number: ${env.BUILD_NUMBER}\nMessage: Please check the logs for more details.",
-            recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-            to: 'recipient@example.com'
-        )
-    }
-}
+    
+      success {
+          emailext(
+              subject: "Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: "The build has completed successfully.\n\nJob: ${env.JOB_NAME}\nBuild Number: ${env.BUILD_NUMBER}\nMessage: Your custom message here.",
+              recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+              to: 'recipient@example.com'
+          )
+        }
+      failure {
+          emailext(
+              subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: "The build has failed.\n\nJob: ${env.JOB_NAME}\nBuild Number: ${env.BUILD_NUMBER}\nMessage: Please check the logs for more details.",
+              recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+              to: 'recipient@example.com'
+          )
+      }
 
     }
+
   }
+
 }
