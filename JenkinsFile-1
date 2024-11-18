@@ -13,7 +13,7 @@ pipeline{
         bat ' echo "Step 1 execution"'
         bat ' echo "List of all files"'
         bat ' dir '
-        bat ' mkdir New_Folder'
+      
       }
     }
     stage('STEP 2'){
