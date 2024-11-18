@@ -1,17 +1,211 @@
-pipeline{
-    agent any
+                
 
-    stages{
-
-        stage('input'){
-
-            steps{
-                bat 'dir'
-                bat 'mkdir samplefolder'
-             
-
+pipeline {
+    agent { label 'k8s && usnh && micro' } // Change 'your-node-label' to the label of your node
+    environment {
+        REPO_URL = 'ssh://git@git.parallelwireless.net:7999/qa/pw-robo-network-automation.git'
+        RECIPIENT = 'pmashal@parallelwireless.com,jpc@parallelwireless.com,rkotoju@parallelwireless.com,csarvana@parallelwireless.com,sbethini@parallelwireless.com,ssireen@parallelwireless.com'
+        TOOL_IP_SCALLING = '10.62.23.51'
+        TOOL_IP_STANDALONE = '10.62.104.9'
+        SSH_USER = 'root'
+        SSH_PASS = 'password'
+        TAG_NAME_STANDALONE = 'SET1'
+        TAG_NAME_SCALLING = 'SET1'
+        FOLDER_NAME_STANDALONE = 'CICD_STANDALONE'
+        FOLDER_NAME_SCALLING = 'CICD_SCALLING'
+    }
+    parameters {
+        string(name: 'FOLDER_NAME_STANDALONE', defaultValue: 'CICD_STANDALONE', description: 'Optional folder for standalone robot tests')
+        string(name: 'TOOL_IP', defaultValue: '${TOOL_IP_SCALLING}' ,description: 'Optional TOOL_IP')
+        string(name: 'TAG_NAME_STANDALONE', defaultValue: 'SET1', description: 'Optional tag name for SCALLING robot tests')
+        string(name: 'FOLDER_NAME_SCALLING', defaultValue:'CICD_SCALLING', description: 'Optional folder for SCALLING robot tests')
+        string(name: 'TAG_NAME_SCALING', defaultValue: 'SET1', description: 'Optional tag name for SCALLING robot tests')
+        string(name: 'RECIPIENT',defaultValue:'pmashal@parallelwireless.com,jpc@parallelwireless.com,rkotoju@parallelwireless.com,csarvana@parallelwireless.com,sbethini@parallelwireless.com,ssireen@parallelwireless.com',description:'Build receipt for email output')
+    }
+    options {
+        timeout(time: 420, unit: 'MINUTES') // Set the timeout to 7 hours
+    }
+    stages {
+        stage('Cloning latest code'){
+                parallel {
+                    stage('Checkout latest Test cases for Standalone') {
+                        steps{
+                            script {
+                                echo "Pulling latest code from ${REPO_URL} (PRIVATE 4G)"
+                                def folderName = params.FOLDER_NAME_STANDALONE ?: env.FOLDER_NAME_STANDALONE
+                                sh """
+                                    sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${TOOL_IP_STANDALONE} '
+                                    cd /root/
+                                    if [ -d ${folderName} ]; then
+                                        rm -rf ${folderName}
+                                    fi
+                                    mkdir ${folderName}
+                                    '
+                                """
+                                
+                                echo "SSH into STANDALONE VM and clone repository"
+                                sh """
+                                    sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o PubkeyAuthentication=no  ${SSH_USER}@${TOOL_IP_STANDALONE} '
+                                    cd /root/${folderName} && git clone ${REPO_URL} -b private/4g
+                                    '
+                                """
+                            }
+                        }
+                    }
+                    stage('Checkout latest Test cases for SCALLING') {
+                        steps {
+                            script {
+                                echo "Pulling latest code from ${REPO_URL} (PRIVATE SCALLING)"
+                                def folderName_scalling = params.FOLDER_NAME_SCALLING ?: env.FOLDER_NAME_SCALLING
+                                sh """
+                                    sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${TOOL_IP_SCALLING} '
+                                    cd /root/
+                                    if [ -d ${folderName_scalling} ]; then
+                                        rm -rf ${folderName_scalling}
+                                    fi
+                                    mkdir ${folderName_scalling}
+                                    '
+                                """
+                                
+                                echo "SSH into SCALLING VM and clone repository"
+                                sh """
+                                    sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${TOOL_IP_SCALLING} '
+                                    cd /root/${folderName_scalling} && git clone ${REPO_URL} -b private/Scalling
+                                    '
+                                """
+                            }
+                        }
+                    }
+                }
+            }   
+        stage('Test cases execution [DUT:CPA]') {
+            parallel {
+                    stage('Run and Collect Logs SCALLING') {
+                        steps{
+                            script{
+                                    echo "Running testcases for Scalling"
+                                    def folderName = params.FOLDER_NAME_SCALLING ?: env.FOLDER_NAME_SCALLING
+                                    def tool_ip_scalling=params.TOOL_IP_SCALLING ?:env.TOOL_IP_SCALLING
+                                    def tag_name_scalling = params.TAG_NAME_SCALING ?: env.TAG_NAME_SCALING
+                                    echo "Running all tests for scalling: ${folderName}"
+                                    sh """
+                                    sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_Scalling} "
+                                        cd /root/${folderName}/pw-robo-network-automation;
+                                        robot --outputdir Logs/ -i ${tag_name_scalling} Tests/CPA_SCALLING
+                                        "
+                                    """
+                            }
+                        }        
+                    }
+                    stage('Run and Collect Logs CPA') {
+                        steps{
+                            script{
+                                echo "Running testcases for standalone"
+                                def folderName = params.FOLDER_NAME_STANDALONE ?: env.FOLDER_NAME_STANDALONE
+                                def tool_ip_standalone=params.TOOL_IP_STANDALONE ?:env.TOOL_IP_STANDALONE
+                                def tag_name_standalone = params.TAG_NAME_STANDALONE ?: env.TAG_NAME_STANDALONE
+                                echo "Running all tests for standalone: ${folderName}"
+                                sh """
+                                sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone} "
+                                    cd /root/${folderName}/pw-robo-network-automation;
+                                    robot --outputdir Logs/roboLogs/ -i ${tag_name_standalone} Tests/CPA
+                                    "
+                                """
+                            }                               
+                        }
+                    }
+                    
+                }
             }
+    }
+                          
+            post {
+    always {
+        script {                   
+            def tool_ip_standalone = params.TOOL_IP_STANDALONE ?: env.TOOL_IP_STANDALONE
+            def tool_ip_scaling = params.TOOL_IP_SCALLING ?: env.TOOL_IP_SCALLING
+            def folderName_standalone = params.FOLDER_NAME_STANDALONE ?: env.FOLDER_NAME_STANDALONE
+            def folderName_scaling = params.FOLDER_NAME_SCALLING ?: env.FOLDER_NAME_SCALLING
+            echo "Generating Scalling image for report display"
+                                        sh """
+                                        sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_Scalling} "
+                                            cd /root/${folderName_standalone}/pw-robo-network-automation/Utils;
+                                            python3  REPORT_IMAGE_GENERATOR.py
+                                            "
+                                        """
+             echo "Generating StandAlone image for report display"
+                                sh """
+                                sshpass -p ${SSH_PASS} ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone} "
+                                    cd /root/${folderName_scaling}/pw-robo-network-automation/Utils;
+                                    python3  REPORT_IMAGE_GENERATOR.py
+                                    "
+                                """
+            def emailSubject = currentBuild.currentResult == 'SUCCESS' ?
+                "SCALING AND STANDALONE CPA Build Success: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}" :
+                "SCALING AND STANDALONE CPA Build Failure: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}"
+            def emailBody = currentBuild.currentResult == 'SUCCESS' ?
+                """
+                The Jenkins CPA build for '${env.JOB_NAME}' (Build #${env.BUILD_NUMBER}) has completed successfully.
+                You can view the detailed results by following this link: ${env.BUILD_URL}.
+                """ :
+                """
+                The Jenkins CPA build for '${env.JOB_NAME}' (Build #${env.BUILD_NUMBER}) has failed.
+                Please review the failure details here: ${env.BUILD_URL}.
+                """
+
+            def attachmentPattern
+            if (currentBuild.currentResult != 'SUCCESS') {
+                echo "Collecting Failure logs for SCALLING and STANDALONE"
+                sh """
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/output.xml output_scaling.xml
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/report.html report_scaling.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/log.html log_scaling.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/report.jpg report_scaling.jpg
+                    
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/output.xml output_standalone.xml
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/report.html report_standalone.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/log.html log_standalone.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/report.jpg report_standalone.jpg
+                """               
+                attachmentPattern = '**/output_scaling.xml,**/report_scaling.html,**/log_scaling.html,**/report_scaling.jpg,**/output_standalone.xml,**/report_standalone.html,**/log_standalone.html,**/report_standalone.jpg'
+            
+            } else {
+                echo "Collecting Success logs for SCALLING and STANDALONE"
+                sh """
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/output.xml output_scaling.xml
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/report.html report_scaling.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/log.html log_scaling.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_scaling}:/root/${folderName_scaling}/pw-robo-network-automation/Logs/report.jpg report_scaling.jpg
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/output.xml output_standalone.xml
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/report.html report_standalone.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/log.html log_standalone.html
+                    sshpass -p ${SSH_PASS} scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${SSH_USER}@${tool_ip_standalone}:/root/${folderName_standalone}/pw-robo-network-automation/Logs/roboLogs/report.jpg report_standalone.jpg
+                """
+                attachmentPattern = '**/output_scaling.xml,**/report_scaling.html,**/log_scaling.html,**/report_scaling.jpg,**/output_standalone.xml,**/report_standalone.html,**/log_standalone.html,**/report_standalone.jpg'
+            }
+            
+            emailBody += """
+                <br><br>
+                <h3>STANDALONE CPA TEST REPORT</h3>
+                <img src="cid:report_standalone.jpg" alt="Report Image" />  
+                <h3>SCALING CPA TEST REPORT</h3>
+                <img src="cid:report_scaling.jpg" alt="Report Image" />              
+            """
+            echo "Sending Email"
+            def emails = params.RECIPIENT ?: env.RECIPIENT
+            
+            emailext(
+                to: emails,
+                subject: emailSubject,
+                body: emailBody, 
+                mimeType:'text/html',
+                attachLog:true,
+                attachmentsPattern: attachmentPattern,
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']], 
+            )
         }
     }
-    
 }
+
+}
+    
