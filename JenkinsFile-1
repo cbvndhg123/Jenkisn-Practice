@@ -11,6 +11,8 @@ pipeline{
     stage('STEP 1'){
       steps{
         bat ' echo "Step 1 execution"'
+        bat ' echo "List of all files"'
+        bat ' dir'
       }
     }
     stage('STEP 2'){
