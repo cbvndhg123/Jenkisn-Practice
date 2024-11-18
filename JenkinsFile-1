@@ -16,10 +16,13 @@ pipeline
   stages
   {
     stage('USERNAME'){
-      bat '''
-       echo "Username is  ${USER_ID} 
-       echo "Password is ${PASSWORD} 
-      '''
+      steps{
+
+        bat '''
+        echo "Username is  ${USER_ID} 
+        echo "Password is ${PASSWORD} 
+        '''
+      }
 
     }
     stage('STEP 1'){
