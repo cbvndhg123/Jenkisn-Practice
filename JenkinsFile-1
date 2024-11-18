@@ -21,7 +21,7 @@ pipeline{
   }
   post{
     always{
-      bar 'echo "Post actions"'
+      bat 'echo "Post actions"'
     }
   }
 }
