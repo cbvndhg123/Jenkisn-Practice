@@ -3,7 +3,7 @@ pipeline
 
   agent any
 
-    enviroment{
+    environment{
     USER_ID="ABCDEFG"
       PASSWORD="@##@#"
     }
