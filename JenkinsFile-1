@@ -2,12 +2,16 @@ pipeline
 {
 
   agent any
+
+    enviroment{
+    USER_ID="ABCDEFG"
+      PASSWORD="@##@#"
+    }
   parameters{
 
     string(name:'SET_UP_NAME',defaultValue:'VBSC automation',description:' Optional tag names')
     string(name:'SECTION_IP',defaultValue:'CICD AUTOMATION', description:' Option for the project')
-    USER_ID="ABCDEFG"
-    PASSWORD="@##@#"
+  
   }
   stages
   {
