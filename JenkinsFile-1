@@ -16,8 +16,8 @@ pipeline
   stages
   {
     stage('USERNAME'){
-      bat " echo "Username is  ${USER_ID} ""
-      bat " echo "Password is ${PASSWORD} ""
+      bat ' echo "Username is  ${USER_ID} "'
+      bat ' echo "Password is ${PASSWORD} "'
 
     }
     stage('STEP 1'){
