@@ -19,7 +19,8 @@ pipeline
       steps{
 
         bat '''
-        echo "Username is  ${USER_ID} 
+        echo "Username is  %USER_ID% 
+        echo "For windows % % and for linux ${} to access environment variable
         echo "Password is ${PASSWORD} 
         '''
       }
