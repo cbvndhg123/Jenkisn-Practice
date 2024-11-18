@@ -9,6 +9,7 @@ pipeline {
       steps {
         bat 'echo "Shri Ganesh"'
         echo "Build number is ${currentBuild.number}"
+        echO "Hiii"
       }
     }
   }
