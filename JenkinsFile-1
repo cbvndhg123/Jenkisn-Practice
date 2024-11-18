@@ -6,10 +6,16 @@ pipeline
 
     string(name:'SET_UP_NAME',defaultValue:'VBSC automation',description:' Optional tag names')
     string(name:'SECTION_IP',defaultValue:'CICD AUTOMATION', description:' Option for the project')
-
+    USER_ID="ABCDEFG"
+    PASSWORD="@##@#"
   }
   stages
   {
+    stage('USERNAME'){
+      bat " echo "Username is  ${USER_ID} ""
+      bat " echo "Password is ${PASSWORD} ""
+
+    }
     stage('STEP 1'){
       steps{
         bat ' echo "Step 1 execution"'
